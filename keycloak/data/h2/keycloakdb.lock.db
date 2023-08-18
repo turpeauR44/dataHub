@@ -1,0 +1,6 @@
+#FileLock
+#Mon Aug 07 06:46:04 GMT 2023
+server=172.19.0.4\:39527
+hostName=keycloak
+method=file
+id=189cebee4d59d80092e446d15033d750ae1f69a9a07

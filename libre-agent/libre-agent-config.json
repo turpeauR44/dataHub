@@ -1,0 +1,40 @@
+{
+  "logging": {
+    "type": "json"
+  },
+  "libreDataStoreGraphQL": {
+    "loggerHook": "libreDataStoreGraphQL",
+    "GRAPHQL_URL": "http://apollo-router:4000"
+  },
+  "GraphQLSubscriber": {
+    "GRAPHQL_URL": "http://apollo-router:4000"
+  },
+  "RESTAPI": {
+    "loggerHook": "RESTAPI",
+    "PORT": "8080"
+  },
+  "OIDC": {
+    "serverUrl": "http://keycloak:8080",
+    "realm": "libre",
+    "client_id": "libreUI",
+    "client_secret": "FItUacME3NkdlOg90T1DhjpljU6KElT9",
+    "username": "admin@libremfg.com",
+    "password": "admin"
+  },
+  "NATS": {
+    "SERVER_URL": "nats://system:system@nats:4222"
+  },
+  "OPCUA": {
+    "DiscoveryUrl": "opc.tcp://opcua:4840/",
+    "Endpoint": "opc.tcp://opcua:4840",
+    "Username": "",
+    "Password": "",
+    "Mode": "None",
+    "Policy": "None",
+    "Auth": "Anonymous",
+    "AppUri": "opc.tcp://opcua:4840"
+  },
+  "DATASOURCE": {
+    "ID": "testOpcua"
+  }
+}

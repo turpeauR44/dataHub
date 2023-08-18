@@ -1,0 +1,31 @@
+{
+    "logging": {
+      "type": "json"
+    },
+    "NATS": {
+      "serverUrl": "nats://system:system@nats:4222"
+    },
+    "OIDC": {
+      "client_id": "libreUI",
+      "client_secret": "FItUacME3NkdlOg90T1DhjpljU6KElT9",
+      "password": "admin",
+      "realm": "libre",
+      "serverUrl": "http://keycloak:8080",
+      "username": "admin@libremfg.com"
+    },
+    "SECRET": {
+      "KEY": "813D95DB2854E61D269B0ECCC49D8319F8DB2135F862D0CC"
+    },
+    "graphQLServer": {
+      "Port": 4002
+    },
+    "libreDataStoreGraphQL": {
+      "GraphQL_URL": "http://alpha:8080/graphql"
+    },
+    "BPMN": {
+      "GraphQL_URL": "http://bmpn-engine:8081/query"
+    },
+    "OpenTelemetry": {
+      "serverUrl": "grafana-agent:4317"
+    }
+  }

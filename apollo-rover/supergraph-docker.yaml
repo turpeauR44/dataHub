@@ -1,0 +1,19 @@
+federation_version: =2.3.2
+subgraphs:
+  bass:
+    routing_url: http://alpha:8080/graphql
+    schema:
+      subgraph_url: http://alpha:8080/graphql
+#      file: ../libre-schema/dist/schema.graphql
+  
+  core:
+    routing_url: http://libre-core:4002/query
+    schema:
+      subgraph_url: http://libre-core:4002/query
+#      file: ../libre-core/graph/schema.graphql
+  
+  bpmn-engine:
+    routing_url: http://bpmn-engine:8081/query
+    schema:
+     subgraph_url: http://bpmn-engine:8081/query
+#       file: ../bpmn-engine/graph/schema.graphql

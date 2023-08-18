@@ -1,0 +1,82 @@
+apiVersion: 1
+
+datasources:
+- name: Prometheus
+  type: prometheus
+  uid: libre-prometheus
+  access: proxy
+  orgId: 1
+  url: http://prometheus:9090
+  basicAuth: false
+  isDefault: false
+  version: 1
+  editable: true
+  jsonData:
+    httpMethod: GET
+
+- name: Tempo
+  type: tempo
+  uid: libre-tempo
+  access: proxy
+  orgId: 1
+  url: http://tempo:3200
+  basicAuth: false
+  isDefault: true
+  version: 1
+  editable: true
+  apiVersion: 1
+  jsonData:
+    httpMethod: GET
+    serviceMap:
+      datasourceUid: libre-prometheus
+    tracesToLogsV2:
+      datasourceUid: libre-loki
+      spanEndTimeShift: 5m
+      spanStartTimeShift: -5m
+      tags: [{ key: 'service.name', value: 'container'}] # optional, add to brackets { key: 'ProcessInstanceID', value: 'job' }, { key: 'JobID', value: 'job' } ,
+      filterByTraceID: true
+      filterBySpanID: false
+    nodeGraph:
+      enabled : true
+    lokiSearch:
+        datasourceUid: libre-loki
+
+- name: Loki
+  type: loki
+  uid: libre-loki
+  access: proxy
+  url: http://loki:3100
+  editable: true
+  jsonData:
+    maxLines: 1000
+    derivedFields:
+      - name: TraceID
+        matcherRegex: '"(?:trace_id|TraceID|traceID)":"(\w+)"'
+        url: '$${__value.raw}'
+        urlDisplayLabel: "Tempo"
+        datasourceUid: libre-tempo
+      - name: BPMN
+        matcherRegex: '"(?:WorkFlowSpecID|WorkFlowSpecId)":"(\w+)"'
+        url: 'http://localhost:3000/bpmn/instances/$${__value.raw}/edit/'
+        urlDisplayLabel: "Open in Admin UI"
+
+- name: MQTT
+  type: grafana-mqtt-datasource
+  version: 1
+  editable: true
+  isDefault: false
+  jsonData:
+    uri: mqtt://nats:1883
+    username: system 
+  secureJsonData:
+    password: system
+
+- name: GraphQL Data Source
+  type: fifemon-graphql-datasource
+  version: 1
+  editable: true
+  isDefault: false
+  url: http://apollo-router:4000
+
+
+  

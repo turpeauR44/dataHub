@@ -1,0 +1,88 @@
+receivers:
+  fluentforward:
+    endpoint: 0.0.0.0:8006
+  otlp:
+    protocols:
+      grpc:
+      http:
+  prometheus:
+      config:
+        scrape_configs:
+          - job_name: 'bpmn-engine'
+            scrape_interval: 5s
+            static_configs:
+              - targets: ['bpmn-engine:8080']
+          - job_name: 'libre-core'
+            scrape_interval: 5s
+            static_configs:
+              - targets: ['libre-core:8080']
+  loki:
+    protocols:
+      http:
+      grpc:
+    use_incoming_timestamp: true
+
+processors:
+  attributes/loki:
+    actions:
+      - action: insert
+        key: loki.attribute.labels
+        value: container_name
+      - action: insert
+        key: loki.format
+        value: raw
+  # attributes/datadog:
+  #   actions:
+  #     - action: insert
+  #       key: dd.service
+  #       from_attribute: fluent.tag
+  batch:
+
+exporters:
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+  
+  otlphttp:
+    endpoint: http://tempo:4318
+
+  prometheus:
+    endpoint: "0.0.0.0:9464"
+
+  # datadog:
+  #   api:
+  #     site: datadoghq.eu
+  #     key: ff5c8ec053699eb773446ca117baa515
+
+
+
+# extensions:
+#   health_check:
+#   pprof:
+#     endpoint: :1888
+#   zpages:
+#     endpoint: :55679
+
+service:
+  telemetry:
+    logs:
+      level: info
+  # extensions: [pprof, zpages, health_check]
+  pipelines:
+    logs/loki:
+      receivers: [fluentforward]
+      processors: [attributes/loki]
+      exporters: [loki]
+    # logs/datadog:
+    #   receivers: [fluentforward]
+    #   processors: [attributes/datadog, batch]
+    #   exporters: [datadog]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp]
+      # exporters: [otlphttp, datadog]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+      # exporters: [datadog, prometheus]

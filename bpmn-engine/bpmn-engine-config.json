@@ -1,0 +1,37 @@
+{
+    "logging": {
+      "type": "json"
+    },
+    "libreDataStoreGraphQL": {
+      "loggerHook": "libreDataStoreGraphQL",
+      "GRAPHQL_URL": "http://alpha:8080/graphql"
+    },
+     "GraphQLSubscriber": {
+      "GRAPHQL_URL": "http://alpha:8080/graphql"
+    },
+    "RESTAPI": {
+      "loggerHook": "RESTAPI",
+      "PORT": "8080"
+    },
+    "OIDC": {
+      "serverUrl": "http://keycloak:8080",
+      "realm": "libre",
+      "client_id": "libreUI",
+      "client_secret": "FItUacME3NkdlOg90T1DhjpljU6KElT9",
+      "username": "admin@libremfg.com",
+      "password": "admin"
+    },
+    "core": {
+        "GRAPHQL_URL": "http://libre-core:4002/query"
+    },
+    "NATS": {
+      "serverUrl": "nats://system:system@nats:4222"
+    },
+    "OpenTelemetry": {
+      "serverUrl": "grafana-agent:4317"
+    },
+    "SECRET": {
+        "KEY": "813D95DB2854E61D269B0ECCC49D8319F8DB2135F862D0CC"
+    }
+  }
+  

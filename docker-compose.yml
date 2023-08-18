@@ -1,0 +1,269 @@
+version: "3.2"
+name: libre-local-dev
+
+services:
+  nats:
+    container_name: nats
+    image: nats:alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+      - "1883:1883"
+    command: "-js --name=nats-server --http_port 8222 -c /home/mqtt_demo/config1.conf"
+    volumes:
+      - ./nats/:/home/mqtt_demo
+
+  prometheus-nats-exporter:
+    container_name: prometheus-nats-exporter
+    image: natsio/prometheus-nats-exporter:latest
+    entrypoint: ["/prometheus-nats-exporter"]
+    command: ["-varz","-subz", "-serverz", "-routez", "-jsz", "all", "-leafz", "-gatewayz", "-connz", "-channelz", "http://nats:8222"]
+    ports:
+      - "7777:7777"
+  
+  opcua:
+    container_name: opcua
+    image: open62541/open62541:latest
+    ports:
+     - "4840:4840"
+
+  
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:20.0.1
+    ports:
+      - 8090:8080
+    hostname: keycloak
+    environment:
+      - KC_METRICS_ENABLED=true
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KEYCLOAK_ADMIN=admin
+    volumes:
+    - ./keycloak/data:/opt/keycloak/data/
+    - ./keycloak-theme:/opt/keycloak/themes/libre/
+    command: "start-dev ; sleep 10 && ./opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin && ./opt/keycloak/bin/kcadm.sh update realms/libre -s 'loginTheme=libre'"
+
+
+  apollo-router:
+    container_name: apollo-router
+    image: ghcr.io/apollographql/router:v1.15.1
+    volumes:
+      - ./apollo-router/supergraph-docker.graphql:/dist/schema/supergraph.graphql
+      - ./apollo-router/router-docker.yaml:/dist/config/router.yaml
+    command: [ "--dev", "-c", "/dist/config/router.yaml", "-s", "/dist/schema/supergraph.graphql", "--log", "info"]
+    ports:
+      - "4000:4000"
+      - "9091:9090"
+
+
+  
+  ### LIBRE SERVICES ###
+  zero:
+    image: ghcr.io/libremfg/baas:23.01.02
+    ports:
+      - 5080:5080
+      - 6080:6080
+    command: dgraph zero --my=zero:5080
+    container_name: zero
+
+
+  alpha:
+    image: ghcr.io/libremfg/baas:23.01.02
+    ports:
+      - 8080:8080
+      - 9080:9080
+    command: dgraph alpha --my=alpha:7080 --zero=zero:5080 --security whitelist=0.0.0.0/0 --oidc bypass=true;url=http://keycloak:8080;realm=libre;client-id=libreBaas;client-secret=pk98t8jVtwF9P8erRHZpLklWtz1TzGTR 
+    container_name: alpha
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      test: ["CMD", "curl", "-f", "http://alpha:8080/admin"]
+
+
+  libre-core:
+    container_name: libre-core
+    image: registry.gitlab.com/libremfg/libre-core:v3.0.0-alpha5
+    ports:
+      - 4002:4002
+    volumes:
+      - ./libre-core/libre-core-config.json:/config.json
+    environment:
+      - LIBRE_CONFIG_FILE=/config.json
+    restart: on-failure
+    depends_on:
+     - alpha
+     - keycloak
+     - nats
+
+
+  bpmn-engine:
+    container_name: bpmn-engine
+    image: registry.gitlab.com/libremfg/bpmn-engine:v3.0.0-alpha5
+    ports:
+      - 8081:8081
+    volumes:
+      - ./bpmn-engine/bpmn-engine-config.json:/config.json
+    environment:
+      - LIBRE_CONFIG_FILE=/config.json
+    restart: on-failure
+    depends_on:
+     - alpha
+     - keycloak
+     - nats
+
+
+
+  libre-agent:
+    container_name: libre-agent
+    image: registry.gitlab.com/libremfg/libre-agent:v3.0.0-alpha5
+    ports:
+      - 8085:8085
+    volumes:
+      - ./libre-agent/libre-agent-config.json:/config.json
+    environment:
+      - LIBRE_CONFIG_FILE=/config.json
+      - TZ=Europe/London
+    restart: on-failure
+    depends_on:
+     - alpha
+     - keycloak
+     - nats
+
+  admin-ui:
+    container_name: admin-ui
+    image: registry.gitlab.com/libremfg/frontend/libre-admin-ui:v3.0.0rc1
+    environment:
+      - APP_LIBRE_VERSION="1.0-dev"
+      - APP_APOLLO_CLIENT_ADMIN=http://localhost:4000/
+      - APP_APOLLO_CLIENT=http://localhost:4000/
+      - APP_AUTH_KEYCLOACK_REALM=libre 
+      - APP_AUTH_KEYCLOACK_CLIENT_ID=libreUI 
+      - APP_AUTH_KEYCLOACK_SERVER_URL=http://localhost:8090
+      - APP_AUTH_KEYCLOACK_SECRET=FItUacME3NkdlOg90T1DhjpljU6KElT9
+      - APP_LIBRE_PAGE_LIMIT=20
+      - APP_DEBUG=false
+    ports: 
+    - 3030:80
+  
+  ### OPEN TELEMETRY COLLECTOR ###
+  # otel-collector:
+  #   container_name: otel-collector
+  #   image: otel/opentelemetry-collector-contrib
+  #   command: [--config=/etc/otel-collector-config.yaml]
+  #   volumes:
+  #     - ./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+  #   ports:
+  #     - 3500:3500 # loki receiver
+  #     - 9464:9464 # prom
+  #     - 8006:8006 # fluentd port
+  #     - 1888:1888 # pprof extension
+  #     - 8888:8888 # Prometheus metrics exposed by the collector
+  #     - 8889:8889 # Prometheus exporter metrics
+  #     - 13133:13133 # health_check extension
+  #     - 4317:4317 # OTLP gRPC receiver
+  #     - 4318:4318 # OTLP http receiver
+  #     - 55679:55679 # zpages extension
+
+
+  ### GRAFANA STACK ###
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    volumes:
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: false
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+      GF_INSTALL_PLUGINS: grafana-mqtt-datasource,fifemon-graphql-datasource
+    ports:
+      - "3001:3000" # on 3001 to avoid conflict with admin-ui (running locally)
+
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./grafana/tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "3200:3200"
+      - "4317:4317" # oltp grpc
+      - "4318:4318" # oltp http
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --storage.tsdb.retention.time=2d
+    volumes:
+      - ./grafana/prometheus.yaml:/etc/prometheus.yaml
+    ports:
+      - "9090:9090"
+
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./grafana/loki.yaml:/etc/loki/local-config.yaml
+  
+
+  grafana-agent:
+    container_name: grafana-agent
+    image: grafana/agent:latest
+    ports:
+      - "12345:12345"
+    entrypoint:
+      - /bin/grafana-agent
+      - -server.http.address=0.0.0.0:12345
+      - -config.file=/etc/agent-config/agent.yaml
+      - -metrics.wal-directory=/tmp/agent/wal
+      - -enable-features=integrations-next
+      - -config.expand-env
+      - -config.enable-read-api
+    volumes:
+      - ./grafana/agent.yaml:/etc/agent-config/agent.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+    
+
+
+### HELPER SCRIPTS ###
+
+# Run to initialise/update the schema in BaaS.
+## REQUIRES: alpha
+### To run script use: docker compose run --rm schema-init
+  schema-init:
+    container_name: schema-init
+    image: ghcr.io/libremfg/baas:23.01.02
+    volumes:
+      - ./libre-schema/:/schema
+      - ./scripts/upload-schema.sh:/scripts/upload-schema.sh
+    command: bash -c /scripts/upload-schema.sh
+    depends_on:
+      - alpha
+    profiles: ["scripts"]
+
+
+# Run to create/update the supergraph for Apollo to work in docker.
+## REQUIRES: alpha, bpmn-engine, libre-core
+### To run script use: docker compose run --rm apollo-rover
+  apollo-rover:
+    container_name: apollo-rover
+    image: ghcr.io/apollographql/router:v1.15.1
+    volumes:
+      - ./apollo-rover:/local-dev
+      - ./apollo-router:/local-dev/router
+    entrypoint: ./apollo-rover/supergraph.sh
+    restart: no
+    depends_on:
+      - alpha
+      - bpmn-engine
+      - libre-core
+    profiles: ["scripts"]

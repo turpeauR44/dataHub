@@ -1,6 +1,5 @@
 # local-dev-richemont
-FBN_YNgvrXszzxqbZKuw
-richemont-deploy-token
+
 
 
 ## Getting started

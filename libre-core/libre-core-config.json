@@ -23,7 +23,7 @@
       "GraphQL_URL": "http://alpha:8080/graphql"
     },
     "BPMN": {
-      "GraphQL_URL": "http://bmpn-engine:8081/query"
+      "GraphQL_URL": "http://router/"
     },
     "OpenTelemetry": {
       "serverUrl": "grafana-agent:4317"

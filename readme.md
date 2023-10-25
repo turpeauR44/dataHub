@@ -18,6 +18,13 @@ Once service is up, run:
 docker compose run --rm schema-init
 ```
 
+Optional:
+If schema changed, reconstruct supergraph by running
+```bash
+docker compose run --rm apollo-rover
+docker restart apollo-router
+```
+
 ## Populate Test Dataset
 
 Populate test dataset with

@@ -23,6 +23,8 @@ type Event @withSubscription @key(fields: "iid") {
     #### IDENTIFIERS ####
     """ Unique internal database identifier. """
     iid: ID!
+    """ Associated OperationsRecordEntries from Operations Events """
+    recordEntries: [InformationObject] @hasInverse(field: event)
 
     #### METADATA ####
     """ The date and time in UTC that the entity was created. """
@@ -190,7 +192,7 @@ type EventType @withSubscription @key(fields: "iid") {
     """ Unique internal database identifier. """
     iid: ID!
     """ A unique identification of a specific event type. """
-    id: String! @search(by:[fulltext, exact, regexp])
+    id: String! @id @search(by:[fulltext, exact, regexp])
 
     #### METADATA ####
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
@@ -236,7 +238,7 @@ type EventSubtype @withSubscription @key(fields: "iid") {
     """ Unique internal database identifier. """
     iid: ID!
     """ A unique identification of a specific event type. """
-    id: String! @search(by:[fulltext, exact, regexp])
+    id: String! @id @search(by:[fulltext, exact, regexp])
 
     #### METADATA ####
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
@@ -281,7 +283,7 @@ type EventProperty @withSubscription @key(fields: "iid") {
     """ Unique internal database identifier. """
     iid: ID!
     """ A unique identification of a specific event type. """
-    id: String! @search(by:[fulltext, exact, regexp])
+    id: String! @id @search(by:[fulltext, exact, regexp])
 
     #### METADATA ####
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
@@ -329,7 +331,7 @@ type EventAssociation @withSubscription @key(fields: "iid") {
     """ Unique internal database identifier. """
     iid: ID!
     """ A unique identification of a specific event type. """
-    id: String! @search(by:[fulltext, exact, regexp])
+    id: String! @id @search(by:[fulltext, exact, regexp])
 
     #### METADATA ####
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
@@ -358,7 +360,8 @@ type EventAssociation @withSubscription @key(fields: "iid") {
     from: Event! @hasInverse(field: eventAssociationsFrom)
     """ The event to which the event association is formed. """
     to: Event! @hasInverse(field: eventAssociationsTo)
-}"""
+}
+"""
 The Hierarchy Scope defines where the exchanged information fits within the 
 role based equipment hierarchy. It defines the scope of the exchanged 
 information, such as a site or area for which the information is relevant. The 
@@ -368,6 +371,8 @@ hierarchy.
 type HierarchyScope @withSubscription @key(fields: "iid") {
     """ Unique internal database identifier. """
     iid: ID!
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: hierarchyScope)
 
     """ An identification of the specific property. """
     id: String! @id @search(by: [fulltext, exact, regexp])
@@ -443,6 +448,8 @@ location of the physical asset.
 type SpatialDefinition @withSubscription @key(fields: "iid") {
     """ Unique internal database identifier. """
     iid: ID!
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: spatialDefinition)
 
     """ A string to uniquely identify a spatial definition. """
     id: String! @id @search(by: [fulltext, exact, regexp])
@@ -524,25 +531,27 @@ type OperationalLocationClass @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
-
+  """ Associated OperationsRecordEntries from Operations Events """
+  recordEntries: [InformationObject] @hasInverse(field: operationalLocationClass)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
   _createdOn: DateTime! @default(
     add: { value: "$now" }
   )
-
   """ The date and time in UTC that the entity was last mutated. """
   _modifiedOn: DateTime @default(
     add: { value: "$now" }
     update: { value: "$now" }
   )
-
   """ The username from the token which created the entity. """
   _createdBy: String @search(by: [fulltext, exact])
-
   """ The username from the token from the last mutation of this entity. """
   _modifiedBy: String @search(by: [fulltext, exact])
+  """ Entity is considered active from this point in time forward. """
+  effectiveStart: DateTime! @search @default(add: { value: "$now" })
+  """ Entity is considered active until this time, or until the end of time if empty. """
+  effectiveEnd: DateTime @search
 
   ##### VERSIONING #####
   """ Link to all available versions for this entity. """
@@ -569,7 +578,7 @@ type OperationalLocationClass @withSubscription @key(fields: "iid") {
   isMadeUpOf: OperationalLocationClass @hasInverse(field: isPartOf)
   
   """ The operational location version(s) defined by this operational location class. """
-  defines: [OperationalLocationVersion] @hasInverse(field: definedBy)
+  operationalLocationVersions: [OperationalLocationVersion] @hasInverse(field: operationalLocationClasses)
 }
 
 """
@@ -588,6 +597,8 @@ type OperationalLocationClassVersion @withSubscription @primaryKey(fields: ["id"
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: operationalLocationClassVersion)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -715,6 +726,8 @@ type OperationalLocation @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: operationalLocation)
   """
   A unique identification of a specific operational location, within the hierarchy scope of the
   operational location.
@@ -772,6 +785,8 @@ type OperationalLocationVersion @primaryKey(fields:["id","version"]) @key(fields
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: operationalLocationVersion)
   
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -815,7 +830,7 @@ type OperationalLocationVersion @primaryKey(fields:["id","version"]) @key(fields
   spatialDefinition: SpatialDefinition
 
   """ The operational location class(s) to which this operational location belong. """
-  definedBy: [OperationalLocationClass] @hasInverse(field: defines)
+  operationalLocationClasses: [OperationalLocationClass] @hasInverse(field: operationalLocationVersions)
 
   """ The operational location property(s) of this operational location. """
   properties: [OperationalLocationProperty] @hasInverse(field: operationalLocationVersion)
@@ -939,6 +954,8 @@ type PersonnelClass @withSubscription @key(fields: "iid")
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: personnelClass)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -1014,6 +1031,8 @@ type PersonnelClassVersion @withSubscription @primaryKey(fields:["id","version"]
   acl: [AccessPermission]
   """ The personnel class that this personnel class version relates to. """
   personnelClass: PersonnelClass! @hasInverse(field: versions)
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: personnelClassVersion)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -1190,6 +1209,8 @@ type Person @withSubscription @key(fields: "iid")
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: person)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -1259,6 +1280,8 @@ type PersonVersion @withSubscription @primaryKey(fields:["id","version"]) @key(f
   acl: [AccessPermission]
   """ The person that this person version relates to. """
   person: Person! @hasInverse(field: versions)
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: personVersion)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -1463,6 +1486,9 @@ type EquipmentClass @withSubscription @key(fields: "iid")
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: equipmentClass)
+
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -1562,6 +1588,8 @@ type EquipmentClassVersion @withSubscription @primaryKey(fields:["id","version"]
   acl: [AccessPermission]
   """ The equipment class that this equipment class version relates to. """
   equipmentClass: EquipmentClass! @hasInverse(field: versions)
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: equipmentClassVersion)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -1752,6 +1780,8 @@ type Equipment @withSubscription @key(fields: "iid")
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: equipment)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -1860,6 +1890,8 @@ type EquipmentVersion @withSubscription @primaryKey(fields:["id","version"]) @ke
   acl: [AccessPermission]
   """ The equipment that this equipment version relates to. """
   equipment: Equipment! @hasInverse(field: versions)
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: equipmentVersion)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -2077,6 +2109,7 @@ enum EquipmentElementLevel {
   ControlModule
   Other
 }
+
 # ################################################################################
 # Physical Asset domain Entities
 # ################################################################################
@@ -2124,6 +2157,8 @@ type PhysicalAssetClass @withSubscription @key(fields: "iid")
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: physicalAssetClass)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -2221,6 +2256,8 @@ type PhysicalAssetClassVersion @withSubscription @primaryKey(fields:["id","versi
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: physicalAssetClassVersion)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -2411,6 +2448,8 @@ type PhysicalAsset @withSubscription @key(fields: "iid")
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: physicalAsset)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -2512,6 +2551,8 @@ type PhysicalAssetVersion @withSubscription @primaryKey(fields:["id","version"])
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: physicalAssetVersion)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -2744,7 +2785,8 @@ type PhysicalAssetDataSource @withSubscription @key(fields: "iid"){
     ##### RELATIONSHIPS #####
     """ The external data provider details """
     dataSourceVersion: DataSourceVersion @hasInverse(field: physicalAssetDataSources)
-}# ################################################################################
+}
+# ################################################################################
 # Material Information Model
 # ################################################################################
 #
@@ -2799,6 +2841,8 @@ type MaterialClass @withSubscription @key(fields: "iid") @auth(
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: materialClass)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -2887,6 +2931,8 @@ type MaterialClassVersion @withSubscription @primaryKey(fields:["id","version"])
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: materialClassVersion)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -3067,6 +3113,8 @@ type MaterialDefinition @withSubscription @key(fields: "iid") @auth(
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: materialDefinition)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -3136,6 +3184,8 @@ type MaterialDefinitionVersion @withSubscription @primaryKey(fields:["id","versi
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: materialDefinitionVersion)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -3326,6 +3376,8 @@ type MaterialLot @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: materialLot)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -3519,6 +3571,8 @@ type MaterialSubLot @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: materialSubLot)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -3537,7 +3591,7 @@ type MaterialSubLot @withSubscription @key(fields: "iid") {
 
   ##### ATTRIBUTES #####
   """ A unique identification of a specific material sublot, within the scope of the information exchanged. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ Additional information about the material sublot property. """
   description: String @search(by: [fulltext, exact, regexp])
   """ Identifies where the exchanged information fits within the role-based equipment hierarchy. """
@@ -3647,6 +3701,8 @@ type UnitOfMeasure @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: unitOfMeasure)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -3727,7 +3783,6 @@ enum MaterialUse {
   Adjustment
 }
 
-
 """ 
 Planning and logistics disposition of a material lot or assembly of material lots, material sublots, 
 or assmembly of material lots or sublots. 
@@ -3762,7 +3817,8 @@ enum AssemblyRelationship {
   Permanent
   """ A temporary assembly using during production, such as a pallet of different materials or a batch kit. """
   Transient
-}"""
+}
+"""
 A process segment lists the classes of personnel, equipment, physical assets, and material needed, 
 and/or it may present specific resources, such as specific equipment needed for the process segment. 
 A process segment may list the quantity of the resource needed. These values are stored in process 
@@ -3791,6 +3847,8 @@ type ProcessSegment @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: processSegment)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -3857,6 +3915,8 @@ type ProcessSegmentVersion @withSubscription @primaryKey(fields: ["id","version"
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: processSegmentVersion)
     """ The process segment that this process segment version relates to. """
     processSegment: ProcessSegment! @hasInverse(field: versions)
 
@@ -4052,6 +4112,8 @@ type TestSpecification @withSubscription @key(fields: "iid") {
     label: String! @search(by: [fulltext, exact, regexp])
     """ An identification of the version of the test specification. """
     version: String! @search(by: [fulltext, exact])
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: testSpecification)
 
     """
     A named unique instance of the entity. Note that this attribute is subject to change, based on 
@@ -4421,6 +4483,8 @@ type TestResult @key(fields: "iid") {
 
     """ An identification of the specific test result. """
     id: String! @id @search(by: [fulltext, exact, regexp])
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: testResult)
 
     """ Entity is considered active from this point in time forward. """
     effectiveStart: DateTime! @search
@@ -4539,6 +4603,10 @@ type PropertyMeasurement @key(fields: "iid") {
 
     """ An identification of the specific property measurement. """
     id: String! @id @search(by: [fulltext, exact, regexp])
+
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: propertyMeasurement)
+
     """ Entity is considered active from this point in time forward. """
     effectiveStart: DateTime! @search
 
@@ -4647,7 +4715,542 @@ type PropertyMeasurement @key(fields: "iid") {
 # The operations event class record specification and operations event definition
 # record specification shall include the attributes of the abstract operations record
 # specification.
-# ################################################################################
+
+type OperationsEventClass @withSubscription @key(fields: "iid") {
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsEventClass)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+    ##### VERSIONING ######
+    versions: [OperationsEventClassVersion] @hasInverse(field: operationsEventClass)
+    activeVersion: OperationsEventClassVersion @hasInverse(field: isActiveVersionOf)
+    nextVersion: String
+
+
+    ##### ATTRIBUTES #####
+    """ A unique identification of a specific equipment class, within the scope of the information exchanged. """
+    id: String! @id @search(by: [fulltext, exact, regexp])
+    """ The label is last node in the fully qualified name. """
+    label: String! @search(by: [fulltext, exact, regexp])
+
+    ##### RELATIONSHIPS #####
+    """Aggregation relationship (Has A):"""
+    isAssembledFrom: [OperationsEventClass] @hasInverse(field: isComponentOf)
+    isComponentOf: OperationsEventClass @hasInverse(field: isAssembledFrom)
+    """Composition relationship (Is A):"""
+    includesPropertiesOf: [OperationsEventClass] @hasInverse(field: isIncludedIn)
+    isIncludedIn: OperationsEventClass @hasInverse(field: includesPropertiesOf)
+    operationsEventDefinitionVersions: [OperationsEventDefinitionVersion] @hasInverse(field:operationsEventClasses)
+
+
+}
+type OperationsEventClassVersion @withSubscription @primaryKey(fields:["id","version"])  @key(fields: "iid") {
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsEventClassVersion)
+    """ A unique identification of a specific record. """
+    id: String! @search(by: [fulltext, exact, regexp])
+    """ The specific version of the entity. Purposely free to allow use with a specific revision scheme. """
+    version: String!  @search(by: [fulltext, exact])
+
+    operationsEventClass: OperationsEventClass! @hasInverse(field: versions)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+
+    ##### VERSIONING #####
+
+    """ The current state of the version for this entity. """
+    versionStatus: VersionState! @search
+    """ The equipment class that uses this equipment class version as it's active version. """
+    isActiveVersionOf: OperationsEventClass @hasInverse(field: activeVersion)
+    """ The time at which the version became active. """
+    effectiveStart: DateTime @search
+    """ the time at which the version stopped being active. """
+    effectiveEnd: DateTime @search
+
+    ##### ATTRIBUTES #####
+    properties: [OperationsEventClassProperty] @hasInverse(field: operationsEventClassVersion)
+    recordSpecifications: [OperationsEventClassRecordSpecification] @hasInverse(field: operationsEventClassVersion)
+    description: String
+
+}
+
+
+type OperationsEventClassRecordSpecification @withSubscription @key(fields: "iid") {
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+
+    id: String! @search(by: [fulltext, exact, regexp])
+
+    operationsEventClassVersion: OperationsEventClassVersion! @hasInverse(field: recordSpecifications)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+    ##### ATTRIBUTES #####
+    description: String @search(by: [fulltext, exact, regexp])
+    hierarchyScope: HierarchyScope
+    definitionType: DefinitionType
+    informationObjectType: [InformationObjectTypeEnum]
+    multiplicity: Multiplicity
+    action: [Action]
+    actionMultiplicity: Multiplicity
+
+}
+type Multiplicity {
+    Min: Int
+    Max: Int
+}
+enum Action {
+    Added
+    Deleted
+    Changed
+    Observed
+}
+type OperationsEventClassProperty @withSubscription @key(fields: "iid") {
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+
+    id: String! @id @search(by: [fulltext, exact, regexp])
+
+    operationsEventClassVersion: OperationsEventClassVersion! @hasInverse(field: properties)
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+    ##### ATTRIBUTES #####
+    parent: OperationsEventClassProperty @hasInverse(field: children)
+    children: [OperationsEventClassProperty] @hasInverse(field: parent)
+    propertyType: Isa95PropertyType
+    value: String @search(by: [fulltext, exact, regexp])
+    valueUnitOfMeasure: UnitOfMeasure
+}
+type OperationsEventDefinition @withSubscription @key(fields: "iid") {
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsEventDefinition)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+    ##### VERSIONING ######
+    versions: [OperationsEventDefinitionVersion] @hasInverse(field: operationsEventDefinition)
+    activeVersion: OperationsEventDefinitionVersion @hasInverse(field: isActiveVersionOf)
+    nextVersion: String
+
+
+    ##### ATTRIBUTES #####
+    """ A unique identification of a specific equipment class, within the scope of the information exchanged. """
+    id: String! @id @search(by: [fulltext, exact, regexp])
+    """ The label is last node in the fully qualified name. """
+    label: String! @search(by: [fulltext, exact, regexp])
+
+    hierarchyScope: HierarchyScope
+
+    ##### RELATIONSHIPS #####
+
+    """Aggregation relationship (Has A):"""
+    isAssembledFrom: [OperationsEventDefinition] @hasInverse(field: isComponentOf)
+    isComponentOf: OperationsEventDefinition @hasInverse(field: isAssembledFrom)
+    """Composition relationship (Is A):"""
+    includesPropertiesOf: [OperationsEventDefinition] @hasInverse(field: isIncludedIn)
+    isIncludedIn: OperationsEventDefinition @hasInverse(field: includesPropertiesOf)
+    operationsEvents: [OperationsEvent] @hasInverse(field: operationsEventDefinition)
+}
+type OperationsEventDefinitionVersion @withSubscription @primaryKey(fields:["id","version"])  @key(fields: "iid") {
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsEventDefinitionVersion)
+
+    operationsEventDefinition: OperationsEventDefinition! @hasInverse(field: versions)
+
+    id: String! @search(by: [fulltext, exact, regexp])
+    """ The specific version of the entity. Purposely free to allow use with a specific revision scheme. """
+    version: String!  @search(by: [fulltext, exact])
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+
+    ##### VERSIONING #####
+
+    """ The current state of the version for this entity. """
+    versionStatus: VersionState! @search
+    """ The equipment class that uses this equipment class version as it's active version. """
+    isActiveVersionOf: OperationsEventDefinition @hasInverse(field: activeVersion)
+    """ The time at which the version became active. """
+    effectiveStart: DateTime @search
+    """ the time at which the version stopped being active. """
+    effectiveEnd: DateTime @search
+
+    ##### ATTRIBUTES #####
+    """ A unique identification of a specific equipment class version. """
+    description: String @search(by: [fulltext, exact, regexp])
+    operationsEventClasses: [OperationsEventClass] @hasInverse(field: operationsEventDefinitionVersions)
+    hierarchyScope: HierarchyScope
+    priority: [String]
+    operationsEventType: OperationsEventTypeEnum
+    operationsEventLevel: OperationsEventLevelEnum
+    operationsType: WorkType
+    momFunction: MOMFunctionEnum
+    enterpriseFunction: EnterpriseFunctionEnum
+    category: String
+    source: String
+    properties: [OperationsEventDefinitionProperty] @hasInverse(field: operationsEventDefinitionVersion)
+    recordSpecifications: [OperationsEventDefinitionRecordSpecification] @hasInverse(field: operationsEventDefinitionVersion)
+
+}
+enum OperationsEventTypeEnum {
+    Alarm
+    Alert
+    Event
+}
+enum OperationsEventLevelEnum {
+    Level_2
+    Level_3
+    Level_4
+    Other
+}
+enum MOMFunctionEnum {
+    Resource_Management
+    Definition_Management
+    Detailed_Scheduling
+    Dispatching
+    Execution_Management
+    Data_Collection
+    Performance_Analysis
+    Tracking
+}
+enum EnterpriseFunctionEnum {
+    Order_Processing
+    Operations_Scheduling
+    Production_Control
+    Material_And_Energy_Control
+    Product_Cost_Accounting
+    Product_Shipping_Administration
+    Maintenance_Management
+    Marketing_And_Sales
+    Research_And_Development
+    Engineering
+}
+type OperationsEventDefinitionRecordSpecification @withSubscription @key(fields: "iid") {
+
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+
+    id: String! @search(by: [fulltext, exact, regexp])
+
+    operationsEventDefinitionVersion: OperationsEventDefinitionVersion! @hasInverse(field: recordSpecifications)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+    ##### ATTRIBUTES #####
+    description: String @search(by: [fulltext, exact, regexp])
+    hierarchyScope: HierarchyScope
+    definitionType: DefinitionType
+    informationObjectType: [InformationObjectTypeEnum]
+    multiplicity: Multiplicity
+    action: [Action]
+    actionMultiplicity: Multiplicity
+
+    ##### RELATIONSHIPS #####
+    operationsEventRecords:[OperationsEventRecord] @hasInverse(field: operationsEventDefinitionRecordSpecification)
+}
+type OperationsEventDefinitionProperty @withSubscription @key(fields: "iid") {
+
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+
+    id: String! @search(by: [fulltext, exact, regexp])
+
+    operationsEventDefinitionVersion: OperationsEventDefinitionVersion! @hasInverse(field: properties)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+    ##### ATTRIBUTES #####
+
+    description: String @search(by: [fulltext, exact, regexp])
+    value: String @search(by: [fulltext, exact, regexp])
+    valueUnitOfMeasure: UnitOfMeasure
+
+    ##### RELATIONSHIPS #####
+    operationsEventClassProperty: OperationsEventClassProperty
+    parent: OperationsEventDefinitionProperty @hasInverse(field: children)
+    children: [OperationsEventDefinitionProperty] @hasInverse(field: parent)
+}
+
+type OperationsEvent @withSubscription @key(fields: "iid") {
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsEvent)
+
+    id: String! @id @search(by: [fulltext, exact, regexp])
+    operationsEventDefinition: OperationsEventDefinition! @hasInverse(field: operationsEvents)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+
+    ##### ATTRIBUTES #####
+    description: String @search(by: [fulltext, exact, regexp])
+    recordTimestamp: DateTime! @search
+    hierarchyScope: HierarchyScope
+    priority: String
+    operationsEventType: OperationsEventTypeEnum
+    operationsEventLevel: OperationsEventLevelEnum
+    operationsType: WorkType
+    momFunction: MOMFunctionEnum
+    enterpriseFunction: EnterpriseFunctionEnum
+    category: String
+    source: String
+    properties:[OperationsEventProperty] @hasInverse(field: operationsEvent)
+    records:[OperationsEventRecord] @hasInverse(field: operationsEvent)
+
+    ##### RELATIONSHIPS #####
+    parent: OperationsEvent @hasInverse(field: children)
+    children: [OperationsEvent] @hasInverse(field: parent)
+}
+
+
+type OperationsEventProperty @withSubscription @key(fields: "iid") {
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+
+    id: String! @id @search(by: [fulltext, exact, regexp])
+    operationsEvent: OperationsEvent! @hasInverse(field: properties)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+
+    ##### ATTRIBUTES #####
+
+    description: String @search(by: [fulltext, exact, regexp])
+    value: String @search(by: [fulltext, exact, regexp])
+    valueUnitOfMeasure: UnitOfMeasure
+
+    ##### RELATIONSHIPS #####
+    operationsEventDefinitionProperty: OperationsEventDefinitionProperty
+    parent: OperationsEventProperty @hasInverse(field: children)
+    children: [OperationsEventProperty] @hasInverse(field: parent)
+
+}
+type OperationsEventRecord @withSubscription @key(fields: "iid") {
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+
+    id: String! @id @search(by: [fulltext, exact, regexp])
+    operationsEvent: OperationsEvent! @hasInverse(field:records)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+
+    ##### ATTRIBUTES #####
+    description: String @search(by: [fulltext, exact, regexp])
+    action: Action
+    """ The date and time the publisher recorded/transacted the action. Record timestamp explicitly states the time that the publisher took the action  """
+    recordTimestamp: DateTime @search
+    hierarchyScope: HierarchyScope
+    operationsEventDefinitionRecordSpecification: OperationsEventDefinitionRecordSpecification @hasInverse(field: operationsEventRecords)
+    recordEntries: [OperationsEventRecordEntry] @hasInverse(field: operationsEventRecord)
+
+    ##### RELATIONSHIPS #####
+    parent: OperationsEventRecord @hasInverse(field: children)
+    children: [OperationsEventRecord] @hasInverse(field: parent)
+}
+type OperationsEventRecordEntry @withSubscription @primaryKey(fields:["id","recordId"]) @key(fields: "iid") {
+
+
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+    """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+    acl: [AccessPermission]
+    """ Unique external identifier is a composite of the id and the parent record id. """
+    id: String! @search(by: [fulltext, exact, regexp])
+    recordId: String! @search(by: [fulltext, exact, regexp])
+    operationsEventRecord: OperationsEventRecord! @hasInverse(field: recordEntries)
+
+    ##### METADATA #####
+    """ The date and time in UTC that the entity was created. """
+    _createdOn: DateTime! @default( add: { value: "$now" } )
+    """ The date and time in UTC that the entity was last mutated. """
+    _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+    """ The username from the token which created the entity. """
+    _createdBy: String @search(by: [fulltext, exact])
+    """ The username from the token from the last mutation of this entity. """
+    _modifiedBy: String @search(by: [fulltext, exact])
+    """ Entity is considered active from this point in time forward. """
+    effectiveStart: DateTime! @search @default(add: { value: "$now" })
+    """ Entity is considered active until this time, or until the end of time if empty. """
+    effectiveEnd: DateTime @search
+
+    ##### ATTRIBUTES #####
+    description: String @search(by: [fulltext, exact, regexp])
+    recordTimestamp: DateTime! @search
+    hierarchyScope: HierarchyScope
+    data: String
+
+    ##### RELATIONSHIPS #####
+    informationObject: InformationObject @hasInverse(field: operationsEventRecordEntry)
+    parent: OperationsEventRecordEntry @hasInverse(field: children)
+    children: [OperationsEventRecordEntry] @hasInverse(field: parent)
+}# ################################################################################
 # Operations Definition Information Model
 # ################################################################################
 #
@@ -4698,6 +5301,8 @@ type OperationsDefinition @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsDefinition)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -4725,7 +5330,7 @@ type OperationsDefinition @withSubscription @key(fields: "iid") {
     """ Uniquely identifies the operations definition. """
     id: String! @id @search(by: [fulltext, exact, regexp])
     """ The label is last node in the fully qualified name. """
-    label: String! @search(by: [fulltext, exact])
+    label: String! @search(by: [fulltext, exact, regexp])
 
     ##### RELATIONSHIPS #####
     """ In support of the definition type attribute, this instance or child pattern operations definition 
@@ -4759,6 +5364,8 @@ type OperationsDefinitionVersion @withSubscription @primaryKey(fields: ["id","ve
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsDefinitionVersion)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -4891,6 +5498,8 @@ type OperationsSegment @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsSegment)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -5083,7 +5692,7 @@ type ParameterSpecification @withSubscription @key(fields: "iid") {
 
     ##### RELATIONSHIPS #####
     """ The operations segment(s) is defined in part by this parameter specification. """
-    operationsSegment: OperationsSegment! @hasInverse(field: parameterSpecifications)
+    operationsSegment: OperationsSegment @hasInverse(field: parameterSpecifications)
     """ The child parameter specification(s) that are part of this parameter specification as whole. """
     children: [ParameterSpecification] @hasInverse(field: parent)
     """ The parameter specification that this parameter specification is a part of as whole. """
@@ -5148,7 +5757,7 @@ type PersonnelSpecification @withSubscription @key(fields: "iid") {
     """ Identifies the operational location of the personnel resource(s) specified by this personnel specification. """
     operationalLocation: OperationalLocation
     """ Defines the expected use of the personnel class or person in the context of the operations segment. """
-    personnelUse: String
+    personnelUse: String @search(by: [exact, fulltext])
     """ Specifies the amount of personnel resources required for the parent segment. """
     quantity: Float
     """ The unit of measure of the associated quantity. """
@@ -5281,7 +5890,7 @@ type EquipmentSpecification @withSubscription @key(fields: "iid") {
     """ Identifies the operational location of the equipment resource(s) specified by this equipment specification. """
     operationalLocation: OperationalLocation
     """ Defines the expected use of the equipment class or equipment in the context of the operations segment. """
-    equipmentUse: String
+    equipmentUse: String @search(by: [exact, fulltext])
     """ Specifies the amount of equipment resources required for the parent segment. """
     quantity: Float
     """ The unit of measure of the associated quantity. """
@@ -5417,7 +6026,7 @@ type PhysicalAssetSpecification @withSubscription @key(fields: "iid") {
     """ Identifies the physical location of the physical asset(s) specified by this physical asset specification. """
     physicalLocation: OperationalLocation
     """ Defines the expected use of the physical asset class or physical asset in the context of the operations segment. """
-    physicalAssetUse: String
+    physicalAssetUse: String @search(by: [exact, fulltext])
     """ Specifies the amount of physical asset resources required for the parent segment. """
     quantity: Float
     """ The unit of measure of the associated quantity. """
@@ -5691,7 +6300,8 @@ enum DependencyType {
     NO_LATER_AFTER_END
     """ B no earlier than dependency factor after A end. """
     NO_EARLIER_AFTER_END
-}# ################################################################################
+}
+# ################################################################################
 # Operations Schedule Information Model
 # ################################################################################
 #
@@ -5714,6 +6324,8 @@ type OperationsSchedule @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsSchedule)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -5727,7 +6339,7 @@ type OperationsSchedule @withSubscription @key(fields: "iid") {
 
     ##### ATTRIBUTES #####
     """ A unique identification of the operations schedule and could include version and revision identification. """
-    id: String! @search(by: [fulltext, exact, regexp])
+    id: String! @id @search(by: [fulltext, exact, regexp])
     """ Contains additional information and descriptions of the operations schedule. """
     description: String @search(by: [fulltext, exact])
     """ Describes the category of operation. """
@@ -5776,6 +6388,8 @@ type OperationsRequest @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: operationsRequest)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -5789,7 +6403,7 @@ type OperationsRequest @withSubscription @key(fields: "iid") {
 
     ##### ATTRIBUTES #####
     """ A unique identification of the operations request. """
-    id: String! @search(by: [fulltext, exact, regexp])
+    id: String! @id @search(by: [fulltext, exact, regexp])
     """ Contains additional information and descriptions of the operations request. """
     description: String @search(by: [fulltext, exact])
     """ Describes the category of operations. """
@@ -5854,7 +6468,7 @@ type SegmentRequirement @withSubscription @key(fields: "iid") {
 
     ##### ATTRIBUTES #####
     """ A unique identification of the segment requirement within the scope of an operations request. """
-    id: String! @search(by: [fulltext, exact, regexp])
+    id: String! @id @search(by: [fulltext, exact, regexp])
     """ Contains additional information and descriptions of the segment requirement. """
     description: String @search(by: [fulltext, exact])
     """ Describes the category of operation. """
@@ -6405,7 +7019,7 @@ type MaterialRequirement @withSubscription @key(fields: "iid") {
     storageLocation: OperationalLocation
     """ Defines the expected use of the material class, material definition, material lot, or material sublot 
     in the context of the segment requirement. """
-    materialUse: MaterialUse!
+    materialUse: MaterialUse! @search
     """ Specifies the amount of material to be used. """
     quantity: Float!
     """ Identifies the unit of measure of the quantity if applicable. """
@@ -6562,6 +7176,8 @@ type OperationsPerformance @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: operationsPerformance)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -6618,6 +7234,8 @@ type OperationsResponse @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: operationsResponse)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -6790,7 +7408,7 @@ type SegmentData @withSubscription @key(fields: "iid") {
 
   ##### ATTRIBUTES #####
   """ The identification of the segment data. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ The label is last node in the fully qualified name. """
   label: String! @search(by: [fulltext, exact, regexp])
   """ Contains additional information and descriptions of the segment data. """
@@ -6845,7 +7463,7 @@ type PersonnelActual @withSubscription @key(fields: "iid"){
 
   ##### ATTRIBUTES #####
   """ A unique identification of a specific personnel actual. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ Contains additional information and descriptions of the personnel actual. """
   description: String @search(by: [fulltext, exact])
   """ Identifies where the exchanged information fits within the role-based equipment hierarchy. """
@@ -6919,7 +7537,7 @@ type PersonnelActualProperty @withSubscription @key(fields: "iid"){
 
   ##### ATTRIBUTES #####
   """ An identification of the associated person property or personnel class property for a specific segment response. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ The label is last node in the fully qualified name. """
   label: String! @search(by: [fulltext, exact, regexp])
   """ Contains additional information and descriptions of the personnel actual property definition. """
@@ -6985,7 +7603,7 @@ type EquipmentActual @withSubscription @key(fields: "iid"){
 
   ##### ATTRIBUTES #####
   """ Defines a unique identification of a specific equipment actual. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ Contains additional information and descriptions of the equipment actual. """
   description: String @search(by: [fulltext, exact])
   """ Identifies where the exchanged information fits within the role-based equipment hierarchy. """
@@ -7059,7 +7677,7 @@ type EquipmentActualProperty @withSubscription @key(fields: "iid"){
 
   ##### ATTRIBUTES #####
   """ An identification of the associated equipment property or equipment class property for a specific segment response. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ The label is last node in the fully qualified name. """
   label: String! @search(by: [fulltext, exact, regexp])
   """ Contains additional information and descriptions of the equipment actual property definition. """
@@ -7127,7 +7745,7 @@ type PhysicalAssetActual @withSubscription @key(fields: "iid") {
 
   ##### ATTRIBUTES #####
   """ Defines a unique identification of a physical asset actual. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ Contains additional information and descriptions of the physical asset actual. """
   description: String @search(by: [fulltext, exact])
   """ Identifies where the exchanged information fits within the role-based equipment hierarchy. """
@@ -7202,7 +7820,7 @@ type PhysicalAssetActualProperty @withSubscription @key(fields: "iid") {
 
   ##### ATTRIBUTES #####
   """ An identification of the associated physical asset property or class property for a specific segment response. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ The label is last node in the fully qualified name. """
   label: String! @search(by: [fulltext, exact, regexp])
   """ Contains additional information and descriptions of the physical asset actual property definition. """
@@ -7275,7 +7893,7 @@ type MaterialActual @withSubscription @key(fields: "iid"){
   storageLocation: OperationalLocation
   """ Defines the expected use of the material class, material definition, material lot, or material sublot 
   in the context of the segment response. """
-  materialUse: MaterialUse
+  materialUse: MaterialUse @search
   """ Specifies the amount of material produced by the parent segment. """
   quantity: Float
   """ Identifies the unit of measure of the quantity. """
@@ -7348,7 +7966,7 @@ type MaterialActualProperty @withSubscription @key(fields: "iid"){
 
   ##### ATTRIBUTES #####
   """ An identification of the associated material property or material class property for a specific segment response. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ The label is last node in the fully qualified name. """
   label: String! @search(by: [fulltext, exact, regexp])
   """ Contains additional information and descriptions of the material produced actual property definition. """
@@ -7409,7 +8027,7 @@ type OperationsResponseProperty @withSubscription @key(fields: "iid"){
   _modifiedBy: String @search(by: [fulltext, exact])
 
   # Attributes
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ The label is last node in the fully qualified name. """
   label: String! @search(by: [fulltext, exact, regexp])
   description: String @search(by: [fulltext, exact])
@@ -7424,7 +8042,8 @@ type OperationsResponseProperty @withSubscription @key(fields: "iid"){
   operationsResponse: OperationsResponse! @hasInverse(field: properties)
   children: [OperationsResponseProperty] @hasInverse(field: parent)
   parent: OperationsResponseProperty @hasInverse(field: children)
-}# ################################################################################
+}
+# ################################################################################
 # Operations Capability Information Model
 # ################################################################################
 #
@@ -7473,6 +8092,8 @@ type WorkMaster @withSubscription @primaryKey(fields: ["id","version"]) @key(fie
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: workMaster)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -7572,6 +8193,8 @@ type WorkDirective @withSubscription @primaryKey(fields: ["id","version"]) @key(
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: workDirective)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -7661,7 +8284,8 @@ enum WorkDirectiveState {
     HELD
     SUSPENDED
     CLOSED
-}# ################################################################################
+}
+# ################################################################################
 # Workflow Specification Information Model
 # ################################################################################
 #
@@ -7682,6 +8306,8 @@ type WorkflowSpecification @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: workflowSpecification)
   """ link to all available versions for this EquipmentClass """
   versions: [WorkflowSpecificationVersion] @hasInverse(field: workflowSpecification)
   """ the currently active version. to find a version that was active at a point in time, use versions with a filter """
@@ -7704,6 +8330,8 @@ type WorkflowSpecification @withSubscription @key(fields: "iid") {
   workDirectives: [WorkDirective] @hasInverse(field: workflowSpecification)
   stateModelActions: [StateModelAction] @hasInverse(field: workflowSpecification)
   rules: [Rule] @hasInverse(field: workflowSpecification)
+  """ this workflow specification is called by the listed workflowSpecification nodes """
+  calledByNodes :[WorkflowSpecificationNode] @hasInverse(field: containsWorkflowSpecification)
 }
 
 type WorkflowSpecificationVersion @withSubscription @primaryKey(fields:["id","version"]) @key(fields: "iid") {
@@ -7711,6 +8339,8 @@ type WorkflowSpecificationVersion @withSubscription @primaryKey(fields:["id","ve
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: workflowSpecificationVersion)
   """ In combination with the Version field, the id is a unique identification of a specific workflow specification that is consistent outside the scope of this database.
   The ID and Version are used in other parts of the model when the workflow specification needs to be identified. """
   id: String! @search(by: [fulltext, exact, regexp])
@@ -7729,9 +8359,11 @@ type WorkflowSpecificationVersion @withSubscription @primaryKey(fields:["id","ve
   hierarchyScope: HierarchyScope
   definitionType: DefinitionType! @default( add:{value:"INSTANCE"})
   """ Contains the base64 encoded XML that this WorkflowSpecificationVersion was generated from. """
-  bpmnXMLEncoded: String!
+  bpmnXMLEncoded: String
   """ The Json Schema definition of inputs required to execute the workflow. """
   schemaDefinition: String
+  """ Identifies whether this is an executable BPMN or a non-BPMN WorkflowSpecification """
+  isExecutable: Boolean
 
 # MetaData
   _createdBy: String
@@ -7743,6 +8375,7 @@ type WorkflowSpecificationVersion @withSubscription @primaryKey(fields:["id","ve
   includePropertiesOf: [WorkflowSpecification] @hasInverse(field:includedIn)
   messages: [WorkflowMessage] @hasInverse(field: workflowSpecificationVersion)
   timers: [WorkflowTimer] @hasInverse(field: workflowSpecificationVersion)
+  errors: [WorkflowError] @hasInverse(field: workflowSpecificationVersion)
   nodes: [WorkflowSpecificationNode] @hasInverse(field: workflowSpecificationVersion)
   connections: [WorkflowSpecificationConnection] @hasInverse(field: workflowSpecificationVersion)
   properties: [WorkflowSpecificationProperty] @hasInverse(field: workflowSpecificationVersion)
@@ -7836,7 +8469,7 @@ type WorkflowTimer @key(fields: "iid") {
   reference: String @search(by: [fulltext, exact])
   workflowSpecificationVersion: WorkflowSpecificationVersion @hasInverse(field: timers)
   node: WorkflowSpecificationNode @hasInverse(field: timer)
-  enabled: Boolean!
+  enabled: Boolean
 }
 
 """
@@ -7856,6 +8489,22 @@ type WorkflowMessage @key(fields: "iid") {
   workflowSpecificationVersion: WorkflowSpecificationVersion @hasInverse(field: messages)
   node: WorkflowSpecificationNode @hasInverse(field: message)
   enabled: Boolean!
+}
+
+"""
+WorkflowError: Extension of ISA95 Standard to accommodate BPMN2.0. Sooner or
+later, most processes require error handling, which can be represented in BPMN 
+by means of the message event. You’ll recognize it as the small lightning bolt.
+"""
+type WorkflowError @key(fields: "iid") {
+  """ Unique internal database identifier. """
+  iid: ID!
+
+  id: String! @id
+  reference: String @search(by: [fulltext, exact])
+  workflowSpecificationVersion: WorkflowSpecificationVersion @hasInverse(field: errors)
+  node: WorkflowSpecificationNode @hasInverse(field: error)
+  code: String
 }
 
 """
@@ -7893,6 +8542,8 @@ type WorkflowSpecificationNode @key(fields: "iid") {
   outflows: [WorkflowSpecificationConnection] @hasInverse(field: from)
   """ This workflow specification node(s) to the workflow specification connection(s). """
   inflows: [WorkflowSpecificationConnection] @hasInverse(field: to)
+  """ This node is a call activity, and calls the workflow specification """
+  containsWorkflowSpecification: WorkflowSpecification @hasInverse(field: calledByNodes)
 
   _createdBy: String @search(by: [fulltext, exact])
   _createdDateTime: DateTime @default( add: { value: "$now" }) @search
@@ -7906,6 +8557,8 @@ type WorkflowSpecificationNode @key(fields: "iid") {
   outputs: [WorkflowSpecificationNodeVariable]
   """ The message definition that is linked to this node. The way that the message is used depends on the node type"""
   message: WorkflowMessage @hasInverse(field: node)
+  """ The error definition that is linked to this node. """
+  error: WorkflowError @hasInverse(field: node)
   timer: WorkflowTimer @hasInverse(field: node)
   nodeType: WorkflowSpecificationNodeType! @hasInverse(field: nodes)
   """ User Tasks can have a Role assignment that defines the type of users that can complete the task"""
@@ -7915,6 +8568,11 @@ type WorkflowSpecificationNode @key(fields: "iid") {
   uiComponent: String @search(by: [fulltext, exact])
   """ The unit-test cases that verify the correct operation of this node"""
   testCases: [WorkflowSpecificationNodeTestCase] @hasInverse(field: node)
+
+  """ The Boundary Event nodes that are attached to this node """
+  boundaryEvents: [WorkflowSpecificationNode] @hasInverse(field: attachedTo)
+  """ The Node that this node is attached to if it is a boundary event """
+  attachedTo: WorkflowSpecificationNode @hasInverse(field: boundaryEvents)
 }
 
 type WorkflowSpecificationNodeTestCase @key(fields: "iid") {
@@ -8011,6 +8669,8 @@ type WorkflowSpecificationNodeType @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: workflowSpecificationNodeType)
   id: String! @id @search(by: [fulltext, exact, regexp])
   name: String @search(by: [fulltext, exact])
   """ Contains additional information and descriptions of the workflow specification node. """
@@ -8193,6 +8853,8 @@ type WorkflowSpecificationConnectionType @key(fields: "iid") {
   """ Unique internal database identifier. """
   iid: ID!
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: workflowSpecificationConnectionType)
 
   id: String! @id @search(by: [hash])
 
@@ -8305,6 +8967,8 @@ type WorkSchedule @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: workSchedule)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -8371,6 +9035,8 @@ type WorkRequest @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: workRequest)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -8442,6 +9108,8 @@ type JobList @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: jobList)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -8492,6 +9160,8 @@ type JobOrder @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: jobOrder)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -8682,6 +9352,8 @@ type WorkPerformance @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: workPerformance)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -8743,6 +9415,8 @@ type WorkResponse @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: workResponse)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -8816,6 +9490,8 @@ type JobResponseList @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: jobResponseList)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -8868,6 +9544,8 @@ type JobResponse @withSubscription @key(fields: "iid") {
     iid: ID!
     """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
     acl: [AccessPermission]
+    """ The list of OperationsEventRecordEntries that have been recorded """
+    recordEntries: [InformationObject] @hasInverse(field: jobResponse)
 
     ##### METADATA #####
     """ The date and time in UTC that the entity was created. """
@@ -8909,7 +9587,7 @@ type JobResponse @withSubscription @key(fields: "iid") {
 
     ##### RELATIONSHIPS #####
     """ The work response this job response makes up part of. """
-    workResponse: WorkResponse! @hasInverse(field: jobResponses)
+    workResponse: WorkResponse @hasInverse(field: jobResponses)
     """ The segment response contains in part this job response. """
     segmentResponse: SegmentResponse @hasInverse(field: jobResponses)
     """ The work master related to this job response. """
@@ -9009,6 +9687,8 @@ type JobResponseData @withSubscription @key(fields: "iid") {
     ### ISA 88 Compliance ###
     """ Defines a comment on the job response data. """
     comments: [Comment] @hasInverse(field: jobResponseData)
+    """ Approval Signature for this Data record """
+    signatures: [Signature] @hasInverse(field: jobResponseData)
 }
 
 
@@ -9036,6 +9716,8 @@ enum JobState {
     """ Job order or activities have been completed and fully reconciled. No further changes, or restatement 
     of actuals is expected. """
     CLOSED
+    """ Job order or activity doesn't correspond to the other states or is stored else-where. """
+    OTHER
 }
 # ################################################################################
 # Work Capability Information Model
@@ -9304,10 +9986,28 @@ type WorkCalendarEntryProperty @withSubscription @key(fields: "iid"){
 The work calendar shall be defined as a collection of work calendar entries.
 """
 type WorkCalendar @withSubscription @key(fields: "iid") {
+  ##### IDENTIFICATION #####
   """ Unique internal database identifier. """
   iid: ID!
-  """ Boolean value that dictates whether the Work Calendar is active. """
-  isActive: Boolean @search
+  """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+  acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: workCalendar)
+
+  ##### METADATA #####
+  """ The date and time in UTC that the entity was created. """
+  _createdOn: DateTime! @default( add: { value: "$now" } )
+  """ The date and time in UTC that the entity was last mutated. """
+  _modifiedOn: DateTime @default( add: { value: "$now" }, update: { value: "$now" } )
+  """ The username from the token which created the entity. """
+  _createdBy: String @search(by: [fulltext, exact])
+  """ The username from the token from the last mutation of this entity. """
+  _modifiedBy: String @search(by: [fulltext, exact])
+  """ Entity is considered active from this point in time forward. """
+  effectiveStart: DateTime! @search @default(add: { value: "$now" })
+  """ Entity is considered active until this time, or until the end of time if empty. """
+  effectiveEnd: DateTime @search
+
   """ The name of the work calendar. """
   name: String! @id
   """ The description of the work calendar. """
@@ -9344,13 +10044,178 @@ enum WorkCalendarEntryType {
 # external objects. The operations record specification template specifies the
 # content and form of objects in an operations record within the associated operations
 # record entry template(s).
-# ################################################################################
+enum InformationObjectTypeEnum {
+    Change
+    Comment
+    DataSet
+    DataSource
+    DataSourceVersion
+    Equipment
+    EquipmentClass
+    EquipmentClassVersion
+    EquipmentVersion
+    Event
+    HierarchyScope
+    JobList
+    JobOrder
+    JobResponse
+    JobResponseList
+    MaterialClass
+    MaterialClassVersion
+    MaterialDefinition
+    MaterialDefinitionVersion
+    MaterialLot
+    MaterialSubLot
+    OperationalLocation
+    OperationalLocationClass
+    OperationalLocationClassVersion
+    OperationalLocationVersion
+    OperationsCapability
+    OperationsDefinition
+    OperationsDefinitionVersion
+    OperationsEvent
+    OperationsEventClass
+    OperationsEventClassVersion
+    OperationsEventDefinition
+    OperationsEventDefinitionVersion
+    OperationsPerformance
+    OperationsRequest
+    OperationsResponse
+    OperationsSchedule
+    OperationsSegment
+    Other
+    Person
+    PersonVersion
+    PersonnelClass
+    PersonnelClassVersion
+    PhysicalAsset
+    PhysicalAssetClass
+    PhysicalAssetClassVersion
+    PhysicalAssetVersion
+    ProcessSegment
+    ProcessSegmentVersion
+    PropertyMeasurement
+    ResourceNetworkConnectionType
+    ResourceRelationshipNetwork
+    Sample
+    SpatialDefinition
+    TestResult
+    TestSpecification
+    TestSpecificationVersion
+    UnitOfMeasure
+    WorkAlert
+    WorkAlertDefinition
+    WorkCalendar
+    WorkCalendarDefinition
+    WorkCapability
+    WorkDirective
+    WorkMaster
+    WorkMasterCapability
+    WorkMasterVersion
+    WorkPerformance
+    WorkRecord
+    WorkRecordSpecification
+    WorkRequest
+    WorkResponse
+    WorkSchedule
+    WorkflowSpecification
+    WorkflowSpecificationConnectionType
+    WorkflowSpecificationNodeType
+    WorkflowSpecificationVersion
+}
+type InformationObject @withSubscription @key(fields: "iid") {
+
+    ##### IDENTIFICATION #####
+    """ Unique internal database identifier. """
+    iid: ID!
+
+    ##### RELATIONSHIPS #####
+    operationsEventRecordEntry: OperationsEventRecordEntry @hasInverse(field: informationObject)
+
+    ##### ATTRIBUTES #####
+    # change:
+    comment: Comment @hasInverse(field: recordEntries)
+    # dataSet:
+    event: Event @hasInverse(field: recordEntries)
+    dataSource: DataSource @hasInverse(field: recordEntries)
+    dataSourceVersion: DataSourceVersion @hasInverse(field: recordEntries)
+    hierarchyScope: HierarchyScope @hasInverse(field: recordEntries)
+    unitOfMeasure: UnitOfMeasure @hasInverse(field: recordEntries)
+    spatialDefinition: SpatialDefinition @hasInverse(field: recordEntries)
+    operationalLocation: OperationalLocation @hasInverse(field: recordEntries)
+    operationalLocationVersion: OperationalLocationVersion @hasInverse(field: recordEntries)
+    operationalLocationClass: OperationalLocationClass @hasInverse(field: recordEntries)
+    operationalLocationClassVersion: OperationalLocationClassVersion @hasInverse(field: recordEntries)
+    personnelClass: PersonnelClass @hasInverse(field: recordEntries)
+    personnelClassVersion: PersonnelClassVersion @hasInverse(field: recordEntries)
+    person: Person @hasInverse(field: recordEntries)
+    personVersion: PersonVersion @hasInverse(field: recordEntries)
+    equipmentClass: EquipmentClass @hasInverse(field: recordEntries)
+    equipmentClassVersion: EquipmentClassVersion @hasInverse(field: recordEntries)
+    equipment: Equipment @hasInverse(field: recordEntries)
+    equipmentVersion: EquipmentVersion @hasInverse(field: recordEntries)
+    physicalAssetClass: PhysicalAssetClass @hasInverse(field: recordEntries)
+    physicalAssetClassVersion: PhysicalAssetClassVersion @hasInverse(field: recordEntries)
+    physicalAsset: PhysicalAsset @hasInverse(field: recordEntries)
+    physicalAssetVersion: PhysicalAssetVersion @hasInverse(field: recordEntries)
+    materialClass: MaterialClass @hasInverse(field: recordEntries)
+    materialClassVersion: MaterialClassVersion @hasInverse(field: recordEntries)
+    materialDefinition: MaterialDefinition @hasInverse(field: recordEntries)
+    materialDefinitionVersion: MaterialDefinitionVersion @hasInverse(field: recordEntries)
+    materialLot: MaterialLot @hasInverse(field: recordEntries)
+    materialSubLot: MaterialSubLot @hasInverse(field: recordEntries)
+    processSegment: ProcessSegment @hasInverse(field: recordEntries)
+    processSegmentVersion: ProcessSegmentVersion @hasInverse(field: recordEntries)
+    testSpecification: TestSpecification @hasInverse(field: recordEntries)
+    # testSpecificationVersion:
+    testResult: TestResult @hasInverse(field: recordEntries)
+    # sample:
+    propertyMeasurement: PropertyMeasurement @hasInverse(field: recordEntries)
+    operationsEventClass: OperationsEventClass @hasInverse(field: recordEntries)
+    operationsEventClassVersion: OperationsEventClassVersion @hasInverse(field: recordEntries)
+    operationsEventDefinition: OperationsEventDefinition @hasInverse(field: recordEntries)
+    operationsEventDefinitionVersion: OperationsEventDefinitionVersion @hasInverse(field: recordEntries)
+    operationsEvent: OperationsEvent @hasInverse(field: recordEntries)
+    operationsDefinition: OperationsDefinition @hasInverse(field: recordEntries)
+    operationsDefinitionVersion: OperationsDefinitionVersion @hasInverse(field: recordEntries)
+    operationsSegment: OperationsSegment @hasInverse(field: recordEntries)
+    operationsSchedule: OperationsSchedule @hasInverse(field: recordEntries)
+    operationsRequest:OperationsRequest @hasInverse(field: recordEntries)
+    operationsPerformance: OperationsPerformance @hasInverse(field: recordEntries)
+    operationsResponse: OperationsResponse @hasInverse(field: recordEntries)
+    # operationsCapability: OperationsCapability
+    # resourceRelationshipNetwork: ResourceRelationshipNetwork
+    # resourceNetworkConnectionType: ResourceNetworkConnectionType
+    workMaster: WorkMaster @hasInverse(field: recordEntries)
+    workDirective: WorkDirective @hasInverse(field: recordEntries)
+    workflowSpecification: WorkflowSpecification @hasInverse(field: recordEntries)
+    workflowSpecificationVersion: WorkflowSpecificationVersion @hasInverse(field: recordEntries)
+    workflowSpecificationNodeType: WorkflowSpecificationNodeType @hasInverse(field: recordEntries)
+    workflowSpecificationConnectionType: WorkflowSpecificationConnectionType @hasInverse(field: recordEntries)
+    workSchedule: WorkSchedule @hasInverse(field: recordEntries)
+    workRequest: WorkRequest @hasInverse(field: recordEntries)
+    jobList: JobList @hasInverse(field: recordEntries)
+    jobOrder: JobOrder @hasInverse(field: recordEntries)
+    workPerformance: WorkPerformance @hasInverse(field: recordEntries)
+    workResponse: WorkResponse @hasInverse(field: recordEntries)
+    jobResponse: JobResponse @hasInverse(field: recordEntries)
+    jobResponseList: JobResponseList @hasInverse(field: recordEntries)
+    # workCapability: WorkCapability
+    # workMasterCapability: WorkMasterCapability
+    # workAlertDefinition: WorkAlertDefinition
+    # workAlert: WorkAlert
+    workCalendar: WorkCalendar @hasInverse(field: recordEntries)
+    # workCalendarDefinition: WorkCalendarDefinition
+    # workRecord: WorkRecord
+    # workRecordSpecification: WorkRecordSpecification
+    Other: String
+}# ################################################################################
 # State Model
 # ################################################################################
 #
 
 
-type StateModelDefinition  @key(fields: "iid") {
+type StateModelDefinition @key(fields: "iid") {
     ##### IDENTIFICATION #####
     """ Unique internal database identifier. """
     iid: ID!
@@ -9385,6 +10250,8 @@ type StateModelDefinition  @key(fields: "iid") {
     states: [StateModelState] @hasInverse (field: stateModelDefinition)
     transitions: [StateModelTransition] @hasInverse (field: stateModelDefinition)
     events: [StateModelEvent] @hasInverse (field: stateModelDefinition)
+	""" Contains the base64 encoded XML that this StateModelDefinition was generated from. """
+	bpmnXMLEncoded: String!
 
 
     ##### RELATIONSHIPS #####
@@ -9397,9 +10264,10 @@ type StateModelDefinition  @key(fields: "iid") {
     physicalAssetClassVersion: PhysicalAssetClassVersion @hasInverse(field: stateModels)
     physicalAssetVersion: PhysicalAssetVersion @hasInverse(field: stateModels)
     instances: [StateModelInstance] @hasInverse(field: stateModelDefinition)
+	properties: [StateModelProperty] @hasInverse(field: StateModel)
 }
 
-type StateModelState  @key(fields: "iid") {
+type StateModelState @key(fields: "iid") {
     ##### IDENTIFICATION #####
     """ Unique internal database identifier. """
     iid: ID!
@@ -9446,7 +10314,7 @@ type StateModelState  @key(fields: "iid") {
     onExit: [StateModelAction] @hasInverse(field: isExitActionForState)
 }
 
-type StateModelTransition  @key(fields: "iid") {
+type StateModelTransition @key(fields: "iid") {
     ##### IDENTIFICATION #####
     """ Unique internal database identifier. """
     iid: ID!
@@ -9528,7 +10396,7 @@ enum StateModelActionType {
     EXIT
 }
 
-type StateModelAction  @key(fields: "iid") {
+type StateModelAction @key(fields: "iid") {
     ##### IDENTIFICATION #####
     """ Unique internal database identifier. """
     iid: ID!
@@ -9567,7 +10435,7 @@ type StateModelAction  @key(fields: "iid") {
     isExitActionForState: StateModelState @hasInverse(field: onExit)
 }
 
-type StateModelInstance  @key(fields: "iid") {
+type StateModelInstance @key(fields: "iid") {
     ##### IDENTIFICATION #####
     """ Unique internal database identifier. """
     iid: ID!
@@ -9609,7 +10477,7 @@ type StateModelInstance  @key(fields: "iid") {
     physicalAsset: PhysicalAsset @hasInverse(field: stateModelInstances)
 }
 
-type StateTransitionInstance  @key(fields: "iid") {
+type StateTransitionInstance @key(fields: "iid") {
     ##### IDENTIFICATION #####
     """ Unique internal database identifier. """
     iid: ID!
@@ -9632,7 +10500,49 @@ type StateTransitionInstance  @key(fields: "iid") {
     timestamp: DateTime! @search @default( add: { value: "$now" } )
     fromState: String @search(by: [fulltext, exact, regexp])
     toState: String! @search(by: [fulltext, exact, regexp])
-}"""
+}
+
+"""
+A property of a state model shall be defined as a state model property
+A state model property may contain nested state model property(s).
+"""
+type StateModelProperty @withSubscription @key(fields: "iid") {
+  """ Unique internal database identifier. """
+  iid: ID!
+  """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
+  acl: [AccessPermission]
+  StateModel: StateModelDefinition! @hasInverse(field: properties)
+  """ Uniquely identifies the state model property. Fully Qualified identifier that is unique in the database. Required attribute."""
+  id: String! @id @search(by: [fulltext, exact, regexp])
+  """ Uniquely identifies the state model property. Required attribute."""
+  name: String! @search(by: [fulltext, exact])
+  dataType: DataType
+  definitionType: DefinitionType! @default( add:{value:"INSTANCE"})
+  """ Additional information about the StateModelProperty. """
+  description: String @search(by: [fulltext, exact])
+  """ The value, set of values, or range of the property. """
+  value: String @search(by: [fulltext, exact])
+  """ The unit of measure of the associated property value. """
+  valueUnitOfMeasure: UnitOfMeasure
+  """ The date and time in UTC that the entity was created. """
+  _createdOn: DateTime! @default(
+    add: { value: "$now" }
+  )
+  """ The date and time in UTC that the entity was last mutated. """
+  _modifiedOn: DateTime @default(
+    add: { value: "$now" }
+    update: { value: "$now" }
+  )
+  """ The username from the token which created the entity. """
+  _createdBy: String @search(by: [fulltext, exact])
+  """ The username from the token from the last mutation of this entity. """
+  _modifiedBy: String @search(by: [fulltext, exact])
+  """ The nested StateModelProperty(s) makes up part of this equipment property as the whole. """
+  children: [StateModelProperty] @hasInverse(field: parent)
+  """ The StateModelProperty that this nested equipment property makes up part of as the whole. """
+  parent: StateModelProperty @hasInverse(field: children)
+}
+"""
 Access Permissions are labels with attached permission levels that are linked to data objects through the ACL field
 in each type.
 @auth rules on each type are used to check if the users token has the appropriate permission to access that data
@@ -9896,6 +10806,8 @@ type DataSource @withSubscription @key(fields: "iid") {
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: dataSource)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -9944,6 +10856,8 @@ type DataSourceVersion @withSubscription @primaryKey(fields: ["id","version"]) @
   iid: ID!
   """ Access Control List. A list of roles and permission levels. If the Access Control List is empty it is considered open. """
   acl: [AccessPermission]
+  """ The list of OperationsEventRecordEntries that have been recorded """
+  recordEntries: [InformationObject] @hasInverse(field: dataSourceVersion)
 
   ##### METADATA #####
   """ The date and time in UTC that the entity was created. """
@@ -10459,6 +11373,8 @@ type Signature @withSubscription @key(fields: "iid"){
   workResponse: WorkResponse @hasInverse(field:signatures)
   """ The jobResponse entity the signature references. """
   jobResponse: JobResponse @hasInverse(field:signatures)
+  """ The jobResponseData entity the signature references. """
+  jobResponseData: JobResponseData @hasInverse(field:signatures)
   """ The materialActual entity the signature references. """
   materialActual: MaterialActual @hasInverse(field:signatures)
   """ The equipmentActual entity the signature references. """
@@ -10517,7 +11433,7 @@ type SignatureReason @withSubscription @key(fields: "iid") {
 
   ##### ATTRIBUTES #####
   """ Uniquely identifies the signature reason. """
-  id: String! @search(by: [fulltext, exact, regexp])
+  id: String! @id @search(by: [fulltext, exact, regexp])
 
   ##### RELATIONSHIPS #####
   """ The signature instance related to signature reason. """
@@ -10536,6 +11452,8 @@ type Comment @withSubscription @key(fields: "iid"){
   Note: having access to a secret implies access to the encrypted value, not the secret content itself.
   """
   acl: [AccessPermission]
+  """ Associated OperationsRecordEntries from Operations Events """
+  recordEntries: [InformationObject] @hasInverse(field: comment)
 
   ##### METADATA #####
   """ Entity is considered active from this point in time forward. """
@@ -10552,8 +11470,10 @@ type Comment @withSubscription @key(fields: "iid"){
   _modifiedBy: String @search(by: [fulltext, exact])
 
   ##### ATTRIBUTES #####
+  """ Comment unique external id. """
+  id: String! @id @search(by: [fulltext, exact, regexp])
   """ Comment body text. """
-  text: String! @search(by: [hash])
+  text: String! @search(by: [fulltext, exact])
   """ Timestamp of the comment. """
   timestamp: DateTime! @default(add: { value: "$now" })
 

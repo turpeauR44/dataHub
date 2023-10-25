@@ -51,6 +51,7 @@ services:
       - ./apollo-router/supergraph-docker.graphql:/dist/schema/supergraph.graphql
       - ./apollo-router/router-docker.yaml:/dist/config/router.yaml
     command: [ "--dev", "-c", "/dist/config/router.yaml", "-s", "/dist/schema/supergraph.graphql", "--log", "info"]
+    restart: on-failure
     ports:
       - "4000:4000"
       - "9091:9090"
@@ -59,21 +60,25 @@ services:
   
   ### LIBRE SERVICES ###
   zero:
-    image: ghcr.io/libremfg/baas:23.01.02
+    image: registry.gitlab.com/libremfg/baas:v3.0.0rc4
     ports:
       - 5080:5080
       - 6080:6080
     command: dgraph zero --my=zero:5080
+    restart: on-failure
     container_name: zero
 
 
   alpha:
-    image: ghcr.io/libremfg/baas:23.01.02
+    image: registry.gitlab.com/libremfg/baas:v3.0.0rc4
     ports:
       - 8080:8080
       - 9080:9080
-    command: dgraph alpha --my=alpha:7080 --zero=zero:5080 --security whitelist=0.0.0.0/0 --oidc bypass=true;url=http://keycloak:8080;realm=libre;client-id=libreBaas;client-secret=pk98t8jVtwF9P8erRHZpLklWtz1TzGTR 
+    command: dgraph alpha --my=alpha:7080 --zero=zero:5080 --security whitelist=0.0.0.0/0 "--oidc=url=http://keycloak:8080;realm=libre;client-id=libreBaas;client-secret=pk98t8jVtwF9P8erRHZpLklWtz1TzGTR;scopemap=/etc/baas/scopemap.json"
+    volumes:
+      - ./libre-baas/scopemap.json:/etc/baas/scopemap.json
     container_name: alpha
+    restart: on-failure
     healthcheck:
       interval: 5s
       timeout: 3s
@@ -83,7 +88,7 @@ services:
 
   libre-core:
     container_name: libre-core
-    image: registry.gitlab.com/libremfg/libre-core:v3.0.0-alpha5
+    image: registry.gitlab.com/libremfg/libre-core:v3.0.0rc5
     ports:
       - 4002:4002
     volumes:
@@ -99,13 +104,15 @@ services:
 
   bpmn-engine:
     container_name: bpmn-engine
-    image: registry.gitlab.com/libremfg/bpmn-engine:v3.0.0-alpha5
+    image: registry.gitlab.com/libremfg/bpmn-engine:v3.0.0rc4
     ports:
       - 8081:8081
     volumes:
       - ./bpmn-engine/bpmn-engine-config.json:/config.json
     environment:
       - LIBRE_CONFIG_FILE=/config.json
+      - BPMN_ENGINE_OIDC_CLIENT_SECRET=FItUacME3NkdlOg90T1DhjpljU6KElT9
+      - BPMN_ENGINE_OIDC_PASSWORD=admin
     restart: on-failure
     depends_on:
      - alpha
@@ -116,7 +123,7 @@ services:
 
   libre-agent:
     container_name: libre-agent
-    image: registry.gitlab.com/libremfg/libre-agent:v3.0.0-alpha5
+    image: registry.gitlab.com/libremfg/libre-agent:v3.0.0-rc3-moderna-231004-1
     ports:
       - 8085:8085
     volumes:
@@ -132,7 +139,7 @@ services:
 
   admin-ui:
     container_name: admin-ui
-    image: registry.gitlab.com/libremfg/frontend/libre-admin-ui:v3.0.0rc1
+    image: registry.gitlab.com/libremfg/frontend/libre-admin-ui:v3.0.0rc3
     environment:
       - APP_LIBRE_VERSION="1.0-dev"
       - APP_APOLLO_CLIENT_ADMIN=http://localhost:4000/
@@ -144,7 +151,7 @@ services:
       - APP_LIBRE_PAGE_LIMIT=20
       - APP_DEBUG=false
     ports: 
-    - 3030:80
+    - 3030:8080
   
   ### OPEN TELEMETRY COLLECTOR ###
   # otel-collector:
@@ -241,7 +248,7 @@ services:
 ### To run script use: docker compose run --rm schema-init
   schema-init:
     container_name: schema-init
-    image: ghcr.io/libremfg/baas:23.01.02
+    image: registry.gitlab.com/libremfg/baas:v3.0.0rc4
     volumes:
       - ./libre-schema/:/schema
       - ./scripts/upload-schema.sh:/scripts/upload-schema.sh
@@ -256,11 +263,12 @@ services:
 ### To run script use: docker compose run --rm apollo-rover
   apollo-rover:
     container_name: apollo-rover
-    image: ghcr.io/apollographql/router:v1.15.1
+    image: registry.gitlab.com/libremfg/libre-router-init:v3.0.0rc4
     volumes:
-      - ./apollo-rover:/local-dev
-      - ./apollo-router:/local-dev/router
-    entrypoint: ./apollo-rover/supergraph.sh
+      - ./apollo-rover/config.json:/etc/libre-baas-proxy/config.json
+      - ./apollo-rover/supergraph-docker.yaml:/supergraph/supergraph.yaml
+      - ./apollo-router:/local-dev
+    entrypoint: [ "/bin/bash", "-c", "/usr/bin/libre-baas-proxy & sleep 5 && TMPDIR=/apollo /apollo/.rover/bin/rover supergraph compose --skip-update-check --skip-update --config /supergraph/supergraph.yaml --elv2-license=accept > /local-dev/supergraph-docker.graphql"]
     restart: no
     depends_on:
       - alpha

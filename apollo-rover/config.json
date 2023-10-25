@@ -1,0 +1,12 @@
+{
+    "port": "8080",
+    "url": "http://alpha:8080/graphql",
+    "OIDC": {
+      "serverUrl": "http://keycloak:8080",
+      "realm": "libre",
+      "client_id": "libreUI",
+      "client_secret": "FItUacME3NkdlOg90T1DhjpljU6KElT9",
+      "password": "admin",
+      "username": "admin@libremfg.com"
+    }
+  }

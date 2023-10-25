@@ -1,7 +1,11 @@
 supergraph:
+  introspection: true
   listen: 0.0.0.0:4000
 cors:
   allow_any_origin: true
+override_subgraph_url:
+  BAAS: http://alpha:8080/graphql
+  BPMN: http://bpmn-engine:8081/query
 telemetry:
   apollo:
     # The percentage of requests will include HTTP request and response headers in traces sent to Apollo Studio.
@@ -26,4 +30,8 @@ telemetry:
       enabled: true
       listen: 0.0.0.0:9090
       path: /metrics
-    
+headers:
+      all:
+        request:
+          - propagate:
+              matching: ".*"

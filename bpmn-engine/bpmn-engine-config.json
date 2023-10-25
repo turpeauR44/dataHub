@@ -2,6 +2,22 @@
     "logging": {
       "type": "json"
     },
+    "libreLogger": {
+      "defaultLevel": "INFO",
+      "defaultDestination": "CONSOLE",
+      "loggers": [
+        {"libreBpmn": {"topic":"libreBpmn"}},
+        {"RabbitMQPublisher": {"topic":"RabbitMQPublisher"}},
+        {"EVENT_PRODUCER": {"topic":"EVENT_PRODUCER"}},
+        {"BpmnEngine": {"topic":"BpmnEngine"}},
+        {"StartEventHandler": {"topic":"StartEventHandler"}},
+        {"EVENT_CONSUMER": {"topic":"EVENT_CONSUMER"}},
+        {"COMMAND_CONSUMER": {"topic":"COMMAND_CONSUMER"}},
+        {"CDC_CONSUMER": {"topic":"CDC_CONSUMER"}},
+        {"CdcHandler": {"topic":"CdcHandler"}},
+        {"OIDC": {"topic":"OIDC"}}
+      ]
+    },
     "libreDataStoreGraphQL": {
       "loggerHook": "libreDataStoreGraphQL",
       "GRAPHQL_URL": "http://alpha:8080/graphql"
@@ -25,13 +41,33 @@
         "GRAPHQL_URL": "http://libre-core:4002/query"
     },
     "NATS": {
-      "serverUrl": "nats://system:system@nats:4222"
+      "CommandStreamReplicas": 1,
+      "JobResponseKVMaxGB": 2,
+      "JobResponseKVReplicas": 1,
+      "JobResponseKVTTLMinutes": 7,
+      "WorkflowSpecificationsKVReplicas": 1,
+      "serverUrl": "nats://nats:4222"
     },
     "OpenTelemetry": {
       "serverUrl": "grafana-agent:4317"
     },
     "SECRET": {
         "KEY": "813D95DB2854E61D269B0ECCC49D8319F8DB2135F862D0CC"
+    },
+    "viewInstance": {
+      "tempo": {
+        "url": "http://tempo:3200",
+        "accessToken": ""
+      },
+      "loki": {
+        "url": "http://loki:3100",
+        "accessToken": ""
+      },
+      "grafana": {
+        "url": "http://grafana:3000",
+        "tempoUid": ".Values.viewInstance.grafana.tempoUid }}",
+        "org": "1"
+      }
     }
   }
   

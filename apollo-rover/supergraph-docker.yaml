@@ -1,9 +1,9 @@
 federation_version: =2.3.2
 subgraphs:
-  bass:
+  baas:
     routing_url: http://alpha:8080/graphql
     schema:
-      subgraph_url: http://alpha:8080/graphql
+      subgraph_url: http://localhost:8080/graphql
 #      file: ../libre-schema/dist/schema.graphql
   
   core:
